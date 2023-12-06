@@ -5,6 +5,17 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
+/*
+    It’s essential to understand what happened behind the scene:
+    1. Quarkus creates the virtual thread to invoke your endpoint (because of the @RunOnVirtualThread annotation).
+    2. When the code invokes the rest client, the virtual thread is blocked, BUT the carrier thread is not blocked (that’s the virtual thread magic touch).
+    3. Once the first invocation of the rest client completes, the virtual thread is rescheduled and continues its execution.
+    4. The second rest client invocation happens, and the virtual thread is blocked again (but not the carrier thread).
+    5. Finally, when the second invocation of the rest client completes, the virtual thread is rescheduled and continues its execution.
+    6. The method returns the result. The virtual thread terminates.
+    7. The result is captured by Quarkus and written in the HTTP response.    *
+*/
+
 @Path("/")
 public class TheBestPlaceToBeResource {
 
@@ -35,22 +46,4 @@ public class TheBestPlaceToBeResource {
             return "Athens (" + Thread.currentThread() + ")";
         }
     }
-
-    /*
-    *
-
-It’s essential to understand what happened behind the scene:
-
-    1. Quarkus creates the virtual thread to invoke your endpoint (because of the @RunOnVirtualThread annotation).
-    2. When the code invokes the rest client, the virtual thread is blocked, BUT the carrier thread is not blocked (that’s the virtual thread magic touch).
-    3. Once the first invocation of the rest client completes, the virtual thread is rescheduled and continues its execution.
-    4. The second rest client invocation happens, and the virtual thread is blocked again (but not the carrier thread).
-    5. Finally, when the second invocation of the rest client completes, the virtual thread is rescheduled and continues its execution.
-    6. The method returns the result. The virtual thread terminates.
-    7. The result is captured by Quarkus and written in the HTTP response
-    *
-    * */
-
-
-
 }
